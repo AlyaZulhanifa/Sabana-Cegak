@@ -1,0 +1,133 @@
+{
+  "users": [
+    {
+      "id": "user-1794038870912-179tkh",
+      "name": "Rahma Fauzia",
+      "email": "rahmafauzia992@gmail.com",
+      "password": "8d8f2cb60b5df963173e2c91446d6b93:5acbd7fa1f9a4a834abb9f631a0fdf5dfb6308a66ae35726539b771fdb15e3d75d8baf5623ab58da08c4c86f1cc4cc391ef842d669b999bef2bc18c6842e0b4a",
+      "role": "FAMILY_CAREGIVER",
+      "phone": "083167876044",
+      "createdAt": "2026-11-07T08:07:50.912Z"
+    }
+  ],
+  "patients": [
+    {
+      "id": "patient-1794039237817",
+      "name": "Bapak Budi",
+      "birthDate": null,
+      "age": 50,
+      "gender": "Laki-laki",
+      "dischargeDate": "2026-11-07",
+      "hospitalName": "RS Djamil",
+      "primaryCaregiver": "Anggun",
+      "relationship": "Anak Kandung",
+      "createdAt": "2026-11-07T08:13:57.817Z",
+      "updatedAt": "2026-11-07T08:13:57.817Z"
+    }
+  ],
+  "diagnoses": [],
+  "medications": [],
+  "medicationLogs": [],
+  "careInstructions": [],
+  "careChecklists": [],
+  "careChecklistLogs": [],
+  "careAlerts": [],
+  "appointments": [],
+  "careNotes": [],
+  "documents": [
+    {
+      "id": "doc-manual-1794041248556",
+      "patientId": "patient-1794039237817",
+      "fileName": "Entri Rencana Perawatan Mandiri.pdf",
+      "fileType": "application/pdf",
+      "fileSize": 0,
+      "status": "MANUAL_ENTRY",
+      "uploadedAt": "2026-11-07T08:47:28.556Z"
+    },
+    {
+      "id": "doc-1794041245512",
+      "patientId": "patient-1794039237817",
+      "fileName": "CamScanner 07-11-2026 10.41.pdf",
+      "diskFileName": "doc-1794041245512-CamScanner_07-11-2026_10.41.pdf",
+      "fileType": "application/pdf",
+      "fileSize": 1163661,
+      "status": "ANALYZING",
+      "uploadedAt": "2026-11-07T08:47:25.521Z"
+    },
+    {
+      "id": "doc-1794041133619",
+      "patientId": "patient-1794039237817",
+      "fileName": "CamScanner 07-11-2026 10.41.pdf",
+      "diskFileName": "doc-1794041133619-CamScanner_07-11-2026_10.41.pdf",
+      "fileType": "application/pdf",
+      "fileSize": 1163661,
+      "status": "ANALYZING",
+      "uploadedAt": "2026-11-07T08:45:33.628Z"
+    },
+    {
+      "id": "doc-1794040897385",
+      "patientId": "patient-1794039237817",
+      "fileName": "CamScanner 07-11-2026 10.41.pdf",
+      "diskFileName": "doc-1794040897385-CamScanner_07-11-2026_10.41.pdf",
+      "fileType": "application/pdf",
+      "fileSize": 1163661,
+      "status": "ANALYZING",
+      "uploadedAt": "2026-11-07T08:41:37.404Z"
+    },
+    {
+      "id": "doc-1794038894551",
+      "patientId": "patient-1",
+      "fileName": "CamScanner 07-11-2026 10.41.pdf",
+      "diskFileName": "doc-1794038894551-CamScanner_07-11-2026_10.41.pdf",
+      "fileType": "application/pdf",
+      "fileSize": 1163661,
+      "status": "ANALYZING",
+      "uploadedAt": "2026-11-07T08:08:14.561Z"
+    }
+  ],
+  "analyses": [
+    {
+      "id": "analysis-1794041248556",
+      "documentId": "doc-manual-1794041248556",
+      "patientId": "patient-1794039237817",
+      "rawJson": "{\"diagnosis_utama\":{\"value\":\"Pasca Rawat Inap\",\"source\":\"Input Manual Keluarga\",\"confidence\":\"Tinggi\"},\"daftar_obat\":[{\"nama_obat\":\"\",\"dosis\":\"\",\"frekuensi\":\"3 kali sehari\",\"waktu_minum\":[\"Pagi\",\"Siang\",\"Malam\"],\"catatan\":\"Minum sesudah makan\",\"verification_status\":\"pending\"}],\"instruksi_perawatan_rumah\":[{\"kategori\":\"Nutrisi\",\"tindakan\":\"Pola makan bergizi seimbang dan minum air putih cukup.\",\"verification_status\":\"pending\"}],\"tanggal_kontrol\":{\"tanggal\":\"\",\"waktu\":\"09:00 WIB\",\"poli\":\"\",\"lokasi\":\"\"},\"ai_care_alerts\":[]}",
+      "status": "PENDING_VERIFICATION",
+      "analyzedAt": "2026-11-07T08:47:28.556Z",
+      "data": {
+        "diagnosis_utama": {
+          "value": "Pasca Rawat Inap",
+          "source": "Input Manual Keluarga",
+          "confidence": "Tinggi"
+        },
+        "daftar_obat": [
+          {
+            "nama_obat": "",
+            "dosis": "",
+            "frekuensi": "3 kali sehari",
+            "waktu_minum": [
+              "Pagi",
+              "Siang",
+              "Malam"
+            ],
+            "catatan": "Minum sesudah makan",
+            "verification_status": "pending"
+          }
+        ],
+        "instruksi_perawatan_rumah": [
+          {
+            "kategori": "Nutrisi",
+            "tindakan": "Pola makan bergizi seimbang dan minum air putih cukup.",
+            "verification_status": "pending"
+          }
+        ],
+        "tanggal_kontrol": {
+          "tanggal": "",
+          "waktu": "09:00 WIB",
+          "poli": "",
+          "lokasi": ""
+        },
+        "ai_care_alerts": []
+      }
+    }
+  ]
+}
