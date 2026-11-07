@@ -1,0 +1,270 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// 1. User Model (Akun Keluarga / Caregiver)
+model User {
+  id               String               @id @default(uuid())
+  name             String
+  email            String               @unique
+  password         String
+  role             String               @default("FAMILY_CAREGIVER")
+  phone            String?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  patientAccess    PatientAccess[]
+  medicationLogs   MedicationLog[]
+  checklistLogs    CareChecklistLog[]
+  careNotes        CareNote[]
+  notifications    Notification[]
+}
+
+// 2. Patient Model (Profil Pasien Pasca Pulang RS)
+model Patient {
+  id                 String               @id @default(uuid())
+  name               String
+  birthDate          DateTime?
+  age                Int?
+  gender             String?              // Laki-laki / Perempuan
+  dischargeDate      DateTime             // Tanggal keluar RS
+  hospitalName       String?              // Nama Rumah Sakit
+  primaryCaregiver   String               // Nama anggota keluarga pendamping
+  relationship       String               // Hubungan (Anak, Pasangan, dll)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  access             PatientAccess[]
+  documents          MedicalDocument[]
+  analyses           DocumentAnalysis[]
+  diagnoses          Diagnosis[]
+  medications        Medication[]
+  medicationLogs     MedicationLog[]
+  careInstructions   CareInstruction[]
+  careChecklists     CareChecklist[]
+  checklistLogs      CareChecklistLog[]
+  alerts             CareAlert[]
+  appointments       FollowUpAppointment[]
+  notes              CareNote[]
+}
+
+// 3. PatientAccess Model (Manajemen Akses Keluarga untuk Pasien)
+model PatientAccess {
+  id          String    @id @default(uuid())
+  userId      String
+  patientId   String
+  role        String    @default("PRIMARY") // PRIMARY / CONTRIBUTOR / VIEWER
+  permissions String?   // JSON permissions
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  patient     Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, patientId])
+}
+
+// 4. MedicalDocument Model (Berkas Resume Medis / Resep)
+model MedicalDocument {
+  id           String            @id @default(uuid())
+  patientId    String
+  fileName     String
+  fileType     String            // application/pdf, image/jpeg, etc
+  fileSize     Int
+  filePath     String?
+  status       String            @default("UPLOADED") // UPLOADED / ANALYZING / ANALYZED / VERIFIED
+  uploadedAt   DateTime          @default(now())
+
+  patient      Patient           @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  analysis     DocumentAnalysis?
+}
+
+// 5. DocumentAnalysis Model (Hasil Ekstraksi Gemini AI)
+model DocumentAnalysis {
+  id           String           @id @default(uuid())
+  documentId   String           @unique
+  patientId    String
+  rawJson      String           @db.LongText // JSON murni hasil Gemini
+  summary      String?          @db.Text
+  status       String           @default("PENDING_VERIFICATION") // PENDING_VERIFICATION / VERIFIED / REJECTED
+  analyzedAt   DateTime         @default(now())
+
+  document     MedicalDocument  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  patient      Patient          @relation(fields: [patientId], references: [id], onDelete: Cascade)
+}
+
+// 6. Diagnosis Model
+model Diagnosis {
+  id          String    @id @default(uuid())
+  patientId   String
+  name        String
+  source      String?   @default("Ringkasan Medis")
+  confidence  String?   @default("high") // high / medium / low
+  status      String    @default("VERIFIED") // PENDING / VERIFIED
+  createdAt   DateTime  @default(now())
+
+  patient     Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+}
+
+// 7. Medication Model (Daftar Obat Pasien)
+model Medication {
+  id                  String               @id @default(uuid())
+  patientId           String
+  name                String
+  dosage              String               // Misal: 500mg, 1 tablet
+  frequency           String?              // Misal: 3x sehari
+  times               String?              // JSON array ["Pagi", "Siang", "Malam"]
+  notes               String?              // Catatan minum sesudah makan
+  verificationStatus  String               @default("pending") // pending / verified / needs_edit
+  isActive            Boolean              @default(true)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  patient             Patient              @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  schedules           MedicationSchedule[]
+  logs                MedicationLog[]
+}
+
+// 8. MedicationSchedule Model
+model MedicationSchedule {
+  id             String      @id @default(uuid())
+  medicationId   String
+  scheduledTime  String      // "07:00", "13:00", "19:00"
+  timeCategory   String      // Pagi / Siang / Sore / Malam
+  isActive       Boolean     @default(true)
+
+  medication     Medication  @relation(fields: [medicationId], references: [id], onDelete: Cascade)
+}
+
+// 9. MedicationLog Model (Pencatatan Riwayat Pemberian Obat)
+model MedicationLog {
+  id             String      @id @default(uuid())
+  medicationId   String
+  patientId      String
+  userId         String?
+  scheduledTime  String?
+  takenAt        DateTime    @default(now())
+  status         String      // GIVEN (Sudah Diminum) / SKIPPED (Terlewat) / CANCELLED (Dibatalkan)
+  reason         String?     // Alasan jika dilewati/dibatalkan
+  recordedByName String?     // Nama anggota keluarga yang mencatat
+
+  medication     Medication  @relation(fields: [medicationId], references: [id], onDelete: Cascade)
+  patient        Patient     @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  user           User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+// 10. CareInstruction Model (Instruksi Perawatan dari Dokumen Medis)
+model CareInstruction {
+  id                  String          @id @default(uuid())
+  patientId           String
+  category            String          // Perawatan Luka / Nutrisi / Aktivitas / Lainnya
+  action              String          @db.Text
+  notes               String?
+  verificationStatus  String          @default("pending") // pending / verified / needs_edit
+  isActive            Boolean         @default(true)
+  createdAt           DateTime        @default(now())
+
+  patient             Patient         @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  checklists          CareChecklist[]
+}
+
+// 11. CareChecklist Model (Aktivitas Harian Perawatan Pasien)
+model CareChecklist {
+  id                  String             @id @default(uuid())
+  patientId           String
+  careInstructionId   String?
+  title               String
+  category            String             // Perawatan Luka / Nutrisi / Aktivitas
+  description         String?            @db.Text
+  frequency           String?            @default("Setiap Hari")
+  isActive            Boolean            @default(true)
+  createdAt           DateTime           @default(now())
+
+  patient             Patient            @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  instruction         CareInstruction?   @relation(fields: [careInstructionId], references: [id], onDelete: SetNull)
+  logs                CareChecklistLog[]
+}
+
+// 12. CareChecklistLog Model (Riwayat Pelaksanaan Aktivitas Checklist)
+model CareChecklistLog {
+  id              String         @id @default(uuid())
+  careChecklistId String
+  patientId       String
+  userId          String?
+  completedAt     DateTime       @default(now())
+  status          String         // COMPLETED (Selesai) / SKIPPED (Dilewati)
+  reason          String?
+  recordedByName  String?
+
+  checklist       CareChecklist  @relation(fields: [careChecklistId], references: [id], onDelete: Cascade)
+  patient         Patient        @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  user            User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+// 13. CareAlert Model (Peringatan Keselamatan Medis dari AI)
+model CareAlert {
+  id           String    @id @default(uuid())
+  patientId    String
+  level        String    // warning / danger
+  category     String    // Tulisan Tidak Jelas / Informasi Hilang / Informasi Bertentangan / Tanda Bahaya
+  message      String    @db.Text
+  source       String?   @default("Gemini AI Safety Audit")
+  status       String    @default("ACTIVE") // ACTIVE / RESOLVED / DISMISSED
+  createdAt    DateTime  @default(now())
+  resolvedAt   DateTime?
+  resolvedBy   String?
+
+  patient      Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+}
+
+// 14. FollowUpAppointment Model (Jadwal Kontrol Rumah Sakit)
+model FollowUpAppointment {
+  id                 String    @id @default(uuid())
+  patientId          String
+  appointmentDate    String    // Format DD MMMM YYYY atau YYYY-MM-DD
+  appointmentTime    String?
+  hospitalName       String?
+  clinicOrDoctor     String?   // Poli atau Nama Dokter
+  notes              String?   @db.Text
+  isConfirmed        Boolean   @default(false)
+  reminderH3Sent     Boolean   @default(false)
+  reminderH1Sent     Boolean   @default(false)
+  reminderDaySent    Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  patient            Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+}
+
+// 15. CareNote Model (Catatan Koordinasi Keluarga)
+model CareNote {
+  id          String    @id @default(uuid())
+  patientId   String
+  userId      String?
+  authorName  String
+  category    String    @default("Umum") // Gejala, Pola Makan, Catatan Perawat
+  content     String    @db.Text
+  createdAt   DateTime  @default(now())
+
+  patient     Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+// 16. Notification Model
+model Notification {
+  id          String    @id @default(uuid())
+  userId      String
+  title       String
+  message     String    @db.Text
+  type        String    @default("INFO") // INFO / WARNING / DANGER / MEDICATION / APPOINTMENT
+  isRead      Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
