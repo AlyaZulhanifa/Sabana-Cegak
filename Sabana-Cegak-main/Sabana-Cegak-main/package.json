@@ -1,0 +1,25 @@
+{
+  "name": "sabana-cegak",
+  "version": "1.0.0",
+  "description": "SABANA CEGAK - AI-Powered Home Care Companion for Post-Discharge Patients (FIRETECH 2026)",
+  "scripts": {
+    "dev": "npm --prefix client run dev",
+    "client": "npm --prefix client run dev",
+    "server": "npm --prefix server run dev",
+    "dev:server": "npm --prefix server run dev",
+    "dev:client": "npm --prefix client run dev",
+    "install:all": "npm --prefix server install && npm --prefix client install"
+  },
+  "keywords": [
+    "sabana-cegak",
+    "gemini-1.5-flash",
+    "healthtech",
+    "firetech-2026",
+    "home-care",
+    "react",
+    "nodejs"
+  ],
+  "author": "SABANA CEGAK Team",
+  "license": "MIT"
+}
+
