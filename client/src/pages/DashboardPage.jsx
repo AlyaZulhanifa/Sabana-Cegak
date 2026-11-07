@@ -36,6 +36,15 @@ export const DashboardPage = ({
 
   useEffect(() => {
     const fetchDashboardData = async () => {
+      if (!patientId) {
+        setMedications([]);
+        setChecklists([]);
+        setAlerts([]);
+        setRecentActivities([]);
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(true);
       try {
         const [medRes, chkRes, alertRes, histRes] = await Promise.all([
@@ -75,7 +84,13 @@ export const DashboardPage = ({
               Selamat Datang, {currentUser?.name || "Caregiver"}
             </h1>
             <p className="text-xs sm:text-sm text-emerald-100/90 mt-1.5 max-w-xl">
-              Memantau pemulihan: <strong>{activePatient?.name || "Belum ada pasien"}</strong> ({activePatient?.age || "-"} thn) • Pulang RS sejak {activePatient?.dischargeDate || "-"}.
+              {activePatient ? (
+                <>
+                  Memantau pemulihan: <strong>{activePatient.name}</strong> ({activePatient.age || "-"} thn) • Pulang RS sejak {activePatient.dischargeDate || "-"}.
+                </>
+              ) : (
+                "Belum ada profil pasien yang dipantau pada akun ini."
+              )}
             </p>
           </div>
 
@@ -90,6 +105,27 @@ export const DashboardPage = ({
           </div>
         </div>
       </div>
+
+      {/* Banner Peringatan jika belum ada pasien */}
+      {!activePatient && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-amber-900">
+          <div className="flex items-start sm:items-center gap-3">
+            <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5 sm:mt-0" />
+            <div>
+              <p className="font-bold text-sm">Belum Ada Profil Pasien Terpilih</p>
+              <p className="text-xs text-amber-700">
+                Silakan buat profil pasien keluarga yang Anda dampingi terlebih dahulu agar jadwal obat, checklist harian, dan peringatan keselamatan dapat aktif.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => onNavigate("patients")}
+            className="px-4 py-2 bg-[#153C35] text-white font-bold text-xs rounded-xl hover:bg-[#0c2420] transition-colors shrink-0"
+          >
+            Tambah / Kelola Pasien
+          </button>
+        </div>
+      )}
 
       {/* 2. Status Perawatan Hari Ini (4 Key Metric Cards) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">

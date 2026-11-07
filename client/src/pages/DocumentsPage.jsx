@@ -13,6 +13,11 @@ import {
   Download,
   PenTool,
   ExternalLink,
+  Pill,
+  ClipboardList,
+  CheckCircle2,
+  Bell,
+  History,
 } from "lucide-react";
 import {
   uploadMedicalDocument,
@@ -21,19 +26,20 @@ import {
   getDocumentFileUrl,
 } from "../services/api";
 
-export const DocumentsPage = ({ activePatient, onOpenVerification }) => {
+export const DocumentsPage = ({ activePatient, onOpenVerification, onNavigate }) => {
   const [documents, setDocuments] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [errorMsg, setErrorMsg] = useState("");
   const [isStartingManual, setIsStartingManual] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState(null);
 
   const patientId = activePatient?.id;
 
   const loadDocuments = async () => {
     try {
-      const res = await getPatientDocuments(patientId);
+      const res = await getPatientDocuments(patientId || "");
       setDocuments(res.data || []);
     } catch (e) {
       console.error("Gagal memuat dokumen:", e);
@@ -50,22 +56,34 @@ export const DocumentsPage = ({ activePatient, onOpenVerification }) => {
 
     setIsUploading(true);
     setErrorMsg("");
+    setUploadSuccess(null);
     setUploadProgress(20);
 
     try {
       const res = await uploadMedicalDocument(selectedFile, patientId, (percent) => {
-        setUploadProgress(Math.min(85, Math.max(20, percent)));
+        setUploadProgress(Math.min(90, Math.max(20, percent)));
       });
 
       setUploadProgress(100);
       setSelectedFile(null);
       loadDocuments();
 
-      if (res.data && onOpenVerification) {
-        onOpenVerification(res.data, res.meta?.analysisId);
-      }
+      setUploadSuccess({
+        message: res.message || "Dokumen berhasil diekstrak dengan Gemini AI!",
+        counts: res.counts || {
+          medications: res.data?.daftar_obat?.length || 0,
+          checklists: (res.data?.checklist_perawatan || res.data?.instruksi_perawatan_rumah)?.length || 0,
+          alerts: res.data?.ai_care_alerts?.length || 0,
+        },
+        data: res.data,
+        analysisId: res.meta?.analysisId,
+        patientName: res.patient?.name || activePatient?.name || "Ibu Jusmanidar",
+      });
     } catch (err) {
-      const msg = err.response?.data?.message || err.message || "Gagal mengunggah dan menganalisis berkas.";
+      const msg =
+        err.response?.data?.message ||
+        err.message ||
+        "Gagal mengunggah dan menganalisis berkas dokumen medis.";
       setErrorMsg(msg);
       loadDocuments();
     } finally {
@@ -98,10 +116,10 @@ export const DocumentsPage = ({ activePatient, onOpenVerification }) => {
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 flex items-center gap-2.5">
             <FileText className="w-6 h-6 text-[#153C35]" />
-            Arsip Dokumen Medis Pasien
+            Dokumen Medis Pasien
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-2xl">
-            Unggah ringkasan medis pulang (Discharge Summary), resep tulisan tangan dokter, atau lembar instruksi perawatan untuk dianalisis oleh AI medis secara aman.
+            Unggah resume medis keluar RS (Discharge Summary), resep dokter, atau berkas kontrol. Gemini AI akan mengekstrak jadwal obat, panduan checklist perawatan, dan deteksi peringatan risiko komplikasi secara otomatis.
           </p>
         </div>
 
@@ -115,6 +133,121 @@ export const DocumentsPage = ({ activePatient, onOpenVerification }) => {
         </button>
       </div>
 
+      {/* Success Notification & Quick Navigator */}
+      {uploadSuccess && (
+        <div className="bg-emerald-50 border-2 border-emerald-300 rounded-2xl p-5 shadow-sm space-y-4 animate-in fade-in duration-300">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 mt-0.5">
+              <CheckCircle2 className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-base font-black text-emerald-950">
+                {uploadSuccess.message}
+              </h3>
+              <p className="text-xs text-emerald-800 mt-1">
+                Data hasil analisis berkas medis telah tersimpan secara nyata ke database pasien{" "}
+                <strong>{uploadSuccess.patientName}</strong> dan otomatis memperbarui seluruh menu aplikasi:
+              </p>
+            </div>
+          </div>
+
+          {/* Quick Metrics Badges */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+            <div className="bg-white rounded-xl p-3 border border-emerald-200 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-[#E8F2ED] text-[#153C35] rounded-lg">
+                  <Pill className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Jadwal Obat</span>
+                  <span className="text-sm font-black text-slate-800">
+                    {uploadSuccess.counts.medications} Obat Aktif
+                  </span>
+                </div>
+              </div>
+              {onNavigate && (
+                <button
+                  onClick={() => onNavigate("medications")}
+                  className="px-2.5 py-1 text-xs font-bold rounded-lg bg-[#153C35] text-white hover:bg-[#0c2420]"
+                >
+                  Buka
+                </button>
+              )}
+            </div>
+
+            <div className="bg-white rounded-xl p-3 border border-emerald-200 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-emerald-100 text-emerald-800 rounded-lg">
+                  <ClipboardList className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Checklist Panduan</span>
+                  <span className="text-sm font-black text-slate-800">
+                    {uploadSuccess.counts.checklists} Tugas
+                  </span>
+                </div>
+              </div>
+              {onNavigate && (
+                <button
+                  onClick={() => onNavigate("checklists")}
+                  className="px-2.5 py-1 text-xs font-bold rounded-lg bg-[#153C35] text-white hover:bg-[#0c2420]"
+                >
+                  Buka
+                </button>
+              )}
+            </div>
+
+            <div className="bg-white rounded-xl p-3 border border-emerald-200 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-amber-100 text-amber-800 rounded-lg">
+                  <Bell className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block">AI Care Alerts</span>
+                  <span className="text-sm font-black text-slate-800">
+                    {uploadSuccess.counts.alerts} Peringatan
+                  </span>
+                </div>
+              </div>
+              {onNavigate && (
+                <button
+                  onClick={() => onNavigate("alerts")}
+                  className="px-2.5 py-1 text-xs font-bold rounded-lg bg-[#153C35] text-white hover:bg-[#0c2420]"
+                >
+                  Buka
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-emerald-200/60 text-xs">
+            <span className="text-emerald-800 font-medium">
+              Linimasa riwayat juga otomatis mencatat log ekstraksi dokumen ini.
+            </span>
+            <div className="flex items-center gap-2">
+              {onNavigate && (
+                <button
+                  onClick={() => onNavigate("history")}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-emerald-300 bg-white font-bold text-[#153C35] hover:bg-emerald-50"
+                >
+                  <History className="w-3.5 h-3.5" />
+                  <span>Lihat Riwayat Perawatan</span>
+                </button>
+              )}
+              {onOpenVerification && (
+                <button
+                  onClick={() => onOpenVerification(uploadSuccess.data, uploadSuccess.analysisId)}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#153C35] font-bold text-white hover:bg-[#0c2420]"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>Tinjau Lembar Verifikasi Lengkap</span>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Upload Zone Card */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-7 shadow-sm">
         <h2 className="text-sm font-bold uppercase tracking-wider text-[#153C35] mb-4 flex items-center gap-2">
@@ -123,7 +256,7 @@ export const DocumentsPage = ({ activePatient, onOpenVerification }) => {
         </h2>
 
         <form onSubmit={handleUpload} className="space-y-4">
-          <div className="border-2 border-dashed border-slate-300 hover:border-[#153C35] rounded-2xl p-6 sm:p-8 text-center bg-slate-50/50 cursor-pointer">
+          <div className="border-2 border-dashed border-slate-300 hover:border-[#153C35] rounded-2xl p-6 sm:p-8 text-center bg-slate-50/50 cursor-pointer transition-colors">
             <input
               type="file"
               accept=".pdf,image/png,image/jpeg,image/jpg"
@@ -136,10 +269,14 @@ export const DocumentsPage = ({ activePatient, onOpenVerification }) => {
                 <UploadCloud className="w-6 h-6" />
               </div>
               <p className="text-sm font-bold text-slate-800">
-                {selectedFile ? selectedFile.name : "Klik untuk memilih dokumen medis atau seret berkas ke sini"}
+                {selectedFile
+                  ? selectedFile.name
+                  : "Klik untuk memilih dokumen medis atau seret berkas ke sini"}
               </p>
               <p className="text-xs text-slate-400 mt-1">
-                {selectedFile ? `${(selectedFile.size / 1024).toFixed(1)} KB • Siap diunggah` : "Mendukung format PDF, JPG, PNG"}
+                {selectedFile
+                  ? `${(selectedFile.size / 1024).toFixed(1)} KB • Siap diunggah dan dianalisis`
+                  : "Mendukung format PDF, JPG, PNG"}
               </p>
             </label>
           </div>
@@ -167,7 +304,7 @@ export const DocumentsPage = ({ activePatient, onOpenVerification }) => {
               <div className="flex items-center justify-between text-xs font-bold text-slate-700">
                 <span className="flex items-center gap-2">
                   <Loader2 className="w-4 h-4 animate-spin text-[#153C35]" />
-                  Menganalisis Dokumen Medis dengan Gemini 1.5 Flash...
+                  Mengekstrak Dokumen Medis dengan Gemini AI Multimodal...
                 </span>
                 <span>{uploadProgress}%</span>
               </div>
@@ -183,7 +320,7 @@ export const DocumentsPage = ({ activePatient, onOpenVerification }) => {
           <button
             type="submit"
             disabled={!selectedFile || isUploading}
-            className="w-full py-3.5 px-4 rounded-xl font-bold text-xs sm:text-sm text-white bg-[#153C35] hover:bg-[#0c2420] active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+            className="w-full py-3.5 px-4 rounded-xl font-bold text-xs sm:text-sm text-white bg-[#153C35] hover:bg-[#0c2420] active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer shadow-sm"
           >
             <Sparkles className="w-4 h-4" />
             <span>Unggah & Ekstrak dengan Gemini AI</span>
@@ -216,7 +353,12 @@ export const DocumentsPage = ({ activePatient, onOpenVerification }) => {
                   <div>
                     <span className="font-bold text-slate-800 block text-sm">{doc.fileName}</span>
                     <span className="text-[11px] text-slate-500">
-                      {(doc.fileSize / 1024).toFixed(1)} KB • Diunggah pada {new Date(doc.uploadedAt).toLocaleDateString("id-ID")}
+                      {(doc.fileSize / 1024).toFixed(1)} KB • Diunggah pada{" "}
+                      {new Date(doc.uploadedAt).toLocaleDateString("id-ID", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })}
                     </span>
                   </div>
                 </div>

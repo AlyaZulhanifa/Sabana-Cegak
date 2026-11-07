@@ -34,14 +34,32 @@ export const Navbar = ({
 
             {/* Patient Selector */}
             <div className="flex items-center gap-2 bg-[#E8F2ED] text-[#153C35] px-3 py-1.5 rounded-xl border border-emerald-200/60">
-              <Users className="w-4 h-4 text-[#153C35]" />
+              <Users className="w-4 h-4 text-[#153C35] shrink-0" />
               <div className="text-left">
                 <span className="text-[10px] text-emerald-800/80 font-bold uppercase tracking-wider block leading-none">
                   Pasien Aktif
                 </span>
-                <span className="text-xs sm:text-sm font-black text-[#153C35] leading-tight">
-                  {activePatient?.name || "Belum ada pasien"}
-                </span>
+                {patients && patients.length > 1 ? (
+                  <select
+                    value={activePatient?.id || ""}
+                    onChange={(e) => {
+                      const selected = patients.find((p) => p.id === e.target.value);
+                      if (selected && onSelectPatient) onSelectPatient(selected);
+                    }}
+                    aria-label="Pilih pasien aktif"
+                    className="bg-transparent text-xs sm:text-sm font-black text-[#153C35] outline-none cursor-pointer pr-1"
+                  >
+                    {patients.map((p) => (
+                      <option key={p.id} value={p.id} className="text-slate-800 font-medium">
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <span className="text-xs sm:text-sm font-black text-[#153C35] leading-tight">
+                    {activePatient?.name || "Belum ada pasien"}
+                  </span>
+                )}
               </div>
             </div>
           </div>

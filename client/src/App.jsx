@@ -25,6 +25,39 @@ export function App() {
   // Data hasil AI yang perlu diverifikasi sebelum aktif
   const [pendingVerification, setPendingVerification] = useState(null);
 
+  // Fungsi memuat daftar pasien khusus akun yang login
+  const fetchUserPatients = async (preferredPatientId = null) => {
+    try {
+      const res = await getPatients();
+      const patientList = res.data || [];
+      setPatients(patientList);
+      if (patientList.length > 0) {
+        if (preferredPatientId) {
+          const match = patientList.find((p) => p.id === preferredPatientId);
+          setActivePatient(match || patientList[0]);
+        } else {
+          setActivePatient((prev) => {
+            const exists = patientList.find((p) => p.id === prev?.id);
+            if (exists) return exists;
+            // Utamakan pasien aktif Ibu Jusmanidar
+            const jusmanidar = patientList.find(
+              (p) => p.name && p.name.toLowerCase().includes("jusmanidar")
+            );
+            return jusmanidar || patientList[0];
+          });
+        }
+      } else {
+        setActivePatient(null);
+      }
+      return patientList;
+    } catch (e) {
+      console.warn("Failed fetching patients:", e.message);
+      setPatients([]);
+      setActivePatient(null);
+      return [];
+    }
+  };
+
   // Periksa sesi login yang tersimpan
   useEffect(() => {
     const token = localStorage.getItem("sabana_token");
@@ -34,34 +67,34 @@ export function App() {
           if (res?.user) {
             setCurrentUser(res.user);
             setIsAuthenticated(true);
+            fetchUserPatients();
           }
         })
         .catch(() => {
           logoutUser();
           setIsAuthenticated(false);
+          setCurrentUser(null);
+          setPatients([]);
+          setActivePatient(null);
         });
+    } else {
+      setPatients([]);
+      setActivePatient(null);
     }
-
-    // Ambil data pasien
-    getPatients()
-      .then((res) => {
-        if (res?.data?.length > 0) {
-          setPatients(res.data);
-          setActivePatient(res.data[0]);
-        }
-      })
-      .catch((e) => console.warn("Failed fetching patients:", e.message));
   }, []);
 
   const handleLoginSuccess = (user) => {
     setCurrentUser(user);
     setIsAuthenticated(true);
+    fetchUserPatients();
   };
 
   const handleLogout = () => {
     logoutUser();
     setIsAuthenticated(false);
     setCurrentUser(null);
+    setPatients([]);
+    setActivePatient(null);
     setActiveTab("dashboard");
   };
 
@@ -78,6 +111,9 @@ export function App() {
           onRegisterSuccess={(user) => {
             setCurrentUser(user);
             setIsAuthenticated(true);
+            setPatients([]);
+            setActivePatient(null);
+            fetchUserPatients();
           }}
           onSwitchToLogin={() => setAuthView("login")}
         />
@@ -135,8 +171,10 @@ export function App() {
 
           {activeTab === "patients" && (
             <PatientPage
+              currentUser={currentUser}
               activePatient={activePatient}
               onSelectPatient={(p) => setActivePatient(p)}
+              onPatientsChange={fetchUserPatients}
             />
           )}
 
@@ -144,6 +182,10 @@ export function App() {
             <DocumentsPage
               activePatient={activePatient}
               onOpenVerification={handleOpenVerification}
+              onNavigate={(tab) => {
+                setActiveTab(tab);
+                window.scrollTo(0, 0);
+              }}
             />
           )}
 

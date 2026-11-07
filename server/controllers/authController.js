@@ -1,5 +1,5 @@
 
-import { memoryStore, saveDb } from "../config/db.js";
+import { memoryStore, saveDb, prisma } from "../config/db.js";
 import {
   hashPassword,
   comparePassword,
@@ -118,6 +118,24 @@ export const register = async (req, res) => {
     // 10. Simpan akun ke database persisten
     memoryStore.users.push(newUser);
     saveDb();
+
+    // 10b. Simpan akun ke Prisma MySQL jika database aktif
+    if (prisma) {
+      try {
+        await prisma.user.create({
+          data: {
+            id: newUser.id,
+            name: newUser.name,
+            email: newUser.email,
+            password: newUser.password,
+            phone: newUser.phone,
+            role: newUser.role,
+          },
+        });
+      } catch (prismaErr) {
+        console.warn("Prisma user save warning:", prismaErr.message);
+      }
+    }
 
     // 11. Buat token autentikasi
     const token = signToken({

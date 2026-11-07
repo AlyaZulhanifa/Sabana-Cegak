@@ -57,11 +57,11 @@ router.get("/auth/me", requireAuth, getMe);
 router.put("/auth/profile", requireAuth, updateProfile);
 
 // ==================== 3. PATIENTS ====================
-router.get("/patients", getPatients);
-router.get("/patients/:id", getPatientById);
-router.post("/patients", createPatient);
-router.put("/patients/:id", updatePatient);
-router.delete("/patients/:id", deletePatient);
+router.get("/patients", requireAuth, getPatients);
+router.get("/patients/:id", requireAuth, getPatientById);
+router.post("/patients", requireAuth, createPatient);
+router.put("/patients/:id", requireAuth, updatePatient);
+router.delete("/patients/:id", requireAuth, deletePatient);
 
 // ==================== 4. MEDICAL DOCUMENTS & AI EXTRACTION ====================
 router.post(

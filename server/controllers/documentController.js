@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { geminiModel } from "../config/gemini.js";
+import { runGeminiWithFallback } from "../config/gemini.js";
 import { MEDICAL_DOCUMENT_SYSTEM_PROMPT } from "../prompts/medicalPrompts.js";
 import { memoryStore, saveDb } from "../config/db.js";
 
@@ -24,7 +24,8 @@ const bufferToGenerativePart = (buffer, mimeType) => ({
 });
 
 /**
- * Controller: Upload dokumen medis dan jalankan ekstraksi Gemini AI
+ * Controller: Upload dokumen medis dan jalankan ekstraksi Gemini AI multimodal
+ * Hasil langsung disimpan ke database (Document, Medication, CareChecklist, CareAlert, CareNote)
  * POST /api/documents/upload
  */
 export const uploadAndAnalyzeDocument = async (req, res) => {
@@ -39,13 +40,42 @@ export const uploadAndAnalyzeDocument = async (req, res) => {
       });
     }
 
-    const patientId = req.body.patientId || memoryStore.patients[0]?.id || "patient-1";
+    // 2. Hubungkan ke Pasien Aktif (Ibu Jusmanidar sebagai target utama)
+    let targetPatient = null;
+    if (req.body.patientId) {
+      targetPatient = memoryStore.patients.find((p) => p.id === req.body.patientId);
+    }
+    if (!targetPatient) {
+      targetPatient =
+        memoryStore.patients.find(
+          (p) => p.name && p.name.toLowerCase().includes("jusmanidar")
+        ) || memoryStore.patients[0];
+    }
+
+    // Jika belum ada data pasien di memori, buat pasien Ibu Jusmanidar
+    if (!targetPatient) {
+      targetPatient = {
+        id: "827c114e-60af-41dd-a618-6aed07229be4",
+        name: "Ibu Jusmanidar",
+        age: 65,
+        gender: "Perempuan",
+        dischargeDate: new Date().toISOString().split("T")[0],
+        hospitalName: "RSUD Padang",
+        primaryCaregiver: "Anggun Weldiana",
+        relationship: "Anak Kandung",
+        createdAt: new Date().toISOString(),
+      };
+      memoryStore.patients.push(targetPatient);
+    }
+
+    const patientId = targetPatient.id;
+    const patientName = targetPatient.name;
 
     console.log(
-      `[SABANA CEGAK] Memproses dokumen pasien (${patientId}): ${req.file.originalname} (${req.file.mimetype})`
+      `[SABANA CEGAK] Memproses dokumen untuk pasien ${patientName} (${patientId}): ${req.file.originalname} (${req.file.mimetype})`
     );
 
-    // 2. Simpan file fisik ke direktori server/uploads/
+    // 3. Simpan berkas fisik ke server/uploads/
     const documentId = `doc-${Date.now()}`;
     const sanitizedFileName = req.file.originalname.replace(/[^a-zA-Z0-9.-]/g, "_");
     const diskFileName = `${documentId}-${sanitizedFileName}`;
@@ -57,7 +87,7 @@ export const uploadAndAnalyzeDocument = async (req, res) => {
       console.error("[Storage Error] Gagal menulis berkas ke disk:", saveErr);
     }
 
-    // 3. Simpan metadata record dokumen ke database
+    // 4. Simpan record Dokumen Medis awal ke database
     const newDoc = {
       id: documentId,
       patientId,
@@ -71,22 +101,25 @@ export const uploadAndAnalyzeDocument = async (req, res) => {
     memoryStore.documents.unshift(newDoc);
     saveDb();
 
-    // 4. Periksa ketersediaan Kunci Google Gemini API
+    // 5. Periksa Kunci Gemini API
     const apiKey = (process.env.GEMINI_API_KEY || "").trim();
-    const isKeyConfigured = apiKey && apiKey.startsWith("AIzaSy") && !apiKey.includes("kunci_gemini");
+    const isKeyConfigured = apiKey && apiKey.length > 10 && !apiKey.includes("kunci_gemini");
 
     let parsedJson = null;
 
     if (isKeyConfigured) {
       try {
         const docPart = bufferToGenerativePart(req.file.buffer, req.file.mimetype);
-        const result = await geminiModel.generateContent([
+        const result = await runGeminiWithFallback([
           MEDICAL_DOCUMENT_SYSTEM_PROMPT,
           docPart,
         ]);
 
         const responseText = (await result.response).text();
-        const cleanJson = responseText.replace(/^```json\s*/i, "").replace(/```\s*$/i, "").trim();
+        const cleanJson = responseText
+          .replace(/^```json\s*/i, "")
+          .replace(/```\s*$/i, "")
+          .trim();
         parsedJson = JSON.parse(cleanJson);
       } catch (geminiError) {
         console.error("[Gemini API Error]:", geminiError.message);
@@ -97,25 +130,136 @@ export const uploadAndAnalyzeDocument = async (req, res) => {
         });
       }
     } else {
-      // Jika API Key belum dikonfigurasi, beri tahu secara jujur
       return res.status(400).json({
         success: false,
-        message: "Google Gemini API Key belum dikonfigurasi di server/.env. Masukkan GEMINI_API_KEY Anda dari Google AI Studio untuk analisis otomatis, atau masukkan rencana perawatan secara mandiri.",
+        message:
+          "Google Gemini API Key belum dikonfigurasi di server/.env. Masukkan GEMINI_API_KEY Anda untuk analisis otomatis.",
         documentId,
       });
     }
 
+    // 6. SIMPAN HASIL EKSTRAKSI SECARA OTOMATIS KE DATABASE
+    // a. Simpan Diagnosis Utama (bila ada)
+    const rawDiag =
+      typeof parsedJson.diagnosis_utama === "string"
+        ? parsedJson.diagnosis_utama
+        : parsedJson.diagnosis_utama?.value;
+    if (rawDiag && rawDiag.trim()) {
+      memoryStore.diagnoses.unshift({
+        id: `diag-${Date.now()}`,
+        patientId,
+        name: rawDiag.trim(),
+        source: "Resume Medis RS",
+        confidence: "high",
+        status: "VERIFIED",
+        createdAt: new Date().toISOString(),
+      });
+    }
+
+    // b. Simpan List Obat ke tabel/koleksi Medication
+    const rawObat = parsedJson.daftar_obat || parsedJson.list_obat || [];
+    const addedMedications = [];
+    rawObat.forEach((obat, idx) => {
+      if (!obat.nama_obat || !obat.nama_obat.trim()) return;
+
+      let times = obat.waktu_minum;
+      if (!times) {
+        times = ["Pagi"];
+      } else if (!Array.isArray(times)) {
+        times = [String(times)];
+      }
+
+      const medRecord = {
+        id: `med-${Date.now()}-${idx}`,
+        patientId,
+        name: obat.nama_obat.trim(),
+        dosage: obat.dosis || "Sesuai resep",
+        frequency: obat.frekuensi || "Terjadwal",
+        times: JSON.stringify(times),
+        notes: obat.instruksi_khusus || obat.catatan || "",
+        verificationStatus: "verified",
+        sourceDocumentId: documentId,
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      memoryStore.medications.push(medRecord);
+      addedMedications.push(medRecord);
+    });
+
+    // c. Simpan Checklist Perawatan ke tabel/koleksi CareChecklist
+    const rawChecklist =
+      parsedJson.checklist_perawatan || parsedJson.instruksi_perawatan_rumah || [];
+    const addedChecklists = [];
+    rawChecklist.forEach((chk, idx) => {
+      const taskText = chk.deskripsi_tugas || chk.tindakan || chk.title || "";
+      if (!taskText.trim()) return;
+
+      const chkRecord = {
+        id: `chk-${Date.now()}-${idx}`,
+        patientId,
+        title: taskText.length > 60 ? taskText.substring(0, 57) + "..." : taskText,
+        category: chk.kategori || "Aktivitas",
+        description: taskText,
+        frequency: "Setiap Hari",
+        sourceDocumentId: documentId,
+        isActive: true,
+        createdAt: new Date().toISOString(),
+      };
+
+      memoryStore.careChecklists.push(chkRecord);
+      addedChecklists.push(chkRecord);
+    });
+
+    // d. Simpan AI Care Alerts ke tabel/koleksi CareAlert
+    const rawAlerts = parsedJson.ai_care_alerts || parsedJson.care_alerts || [];
+    const addedAlerts = [];
+    rawAlerts.forEach((alert, idx) => {
+      const msg = alert.deskripsi_peringatan || alert.pesan || alert.message || "";
+      if (!msg.trim()) return;
+
+      const level = (alert.tipe || alert.level || "warning").toLowerCase();
+      const alertRecord = {
+        id: `alert-${Date.now()}-${idx}`,
+        patientId,
+        level: level === "danger" ? "danger" : "warning",
+        category:
+          alert.judul ||
+          alert.kategori ||
+          (level === "danger" ? "Tanda Bahaya Medis" : "Perhatian Caregiver"),
+        message: msg,
+        source: "Gemini AI Medical Safety Audit",
+        sourceDocumentId: documentId,
+        status: "ACTIVE",
+        createdAt: new Date().toISOString(),
+      };
+
+      memoryStore.careAlerts.unshift(alertRecord);
+      addedAlerts.push(alertRecord);
+    });
+
+    // e. Catat linimasa otomatis ke Riwayat Perawatan (CareNote)
+    memoryStore.careNotes.unshift({
+      id: `note-${Date.now()}`,
+      patientId,
+      authorName: "Gemini AI Medical Parser",
+      category: "Ekstraksi Dokumen Medis",
+      content: `Berkas medis "${req.file.originalname}" berhasil diekstrak dan tersimpan ke database ${patientName}. Sistem mendaftarkan ${addedMedications.length} obat aktif, ${addedChecklists.length} checklist panduan harian, dan ${addedAlerts.length} peringatan keselamatan AI.`,
+      createdAt: new Date().toISOString(),
+    });
+
+    // f. Simpan rekam jejak DocumentAnalysis
     const analysisId = `analysis-${Date.now()}`;
-    const analysisRecord = {
+    memoryStore.analyses.unshift({
       id: analysisId,
       documentId,
       patientId,
       rawJson: JSON.stringify(parsedJson),
-      status: "PENDING_VERIFICATION",
+      status: "VERIFIED",
       analyzedAt: new Date().toISOString(),
       data: parsedJson,
-    };
-    memoryStore.analyses.unshift(analysisRecord);
+    });
 
     newDoc.status = "ANALYZED";
     saveDb();
@@ -124,7 +268,16 @@ export const uploadAndAnalyzeDocument = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Dokumen berhasil dibaca oleh Gemini AI. Silakan verifikasi hasil ekstraksi sebelum mengaktifkan rencana perawatan.",
+      message: `Dokumen berhasil diekstrak dengan Gemini AI dan disimpan otomatis ke database untuk ${patientName}!`,
+      patient: {
+        id: patientId,
+        name: patientName,
+      },
+      counts: {
+        medications: addedMedications.length,
+        checklists: addedChecklists.length,
+        alerts: addedAlerts.length,
+      },
       meta: {
         analysisId,
         documentId,
@@ -151,7 +304,19 @@ export const uploadAndAnalyzeDocument = async (req, res) => {
  */
 export const startManualCarePlan = async (req, res) => {
   try {
-    const { patientId = "patient-1", diagnosis = "" } = req.body;
+    let targetPatient = null;
+    if (req.body.patientId) {
+      targetPatient = memoryStore.patients.find((p) => p.id === req.body.patientId);
+    }
+    if (!targetPatient) {
+      targetPatient =
+        memoryStore.patients.find(
+          (p) => p.name && p.name.toLowerCase().includes("jusmanidar")
+        ) || memoryStore.patients[0];
+    }
+    const patientId = targetPatient ? targetPatient.id : "827c114e-60af-41dd-a618-6aed07229be4";
+
+    const { diagnosis = "Pasca Rawat Inap RS" } = req.body;
     const documentId = `doc-manual-${Date.now()}`;
 
     const newDoc = {
@@ -166,35 +331,29 @@ export const startManualCarePlan = async (req, res) => {
     memoryStore.documents.unshift(newDoc);
 
     const templateData = {
-      diagnosis_utama: {
-        value: diagnosis || "",
-        source: "Input Manual Keluarga",
-        confidence: "Tinggi",
-      },
+      diagnosis_utama: diagnosis || "",
       daftar_obat: [
         {
           nama_obat: "",
-          dosis: "",
-          frekuensi: "3 kali sehari",
-          waktu_minum: ["Pagi", "Siang", "Malam"],
-          catatan: "Minum sesudah makan",
-          verification_status: "pending",
+          dosis: "1 Tablet",
+          frekuensi: "2 kali sehari",
+          waktu_minum: ["Pagi", "Malam"],
+          instruksi_khusus: "Minum sesudah makan",
         },
       ],
-      instruksi_perawatan_rumah: [
+      checklist_perawatan: [
         {
           kategori: "Nutrisi",
-          tindakan: "Pola makan bergizi seimbang dan minum air putih cukup.",
-          verification_status: "pending",
+          deskripsi_tugas: "Pola makan bergizi seimbang dan minum air putih cukup.",
         },
       ],
+      ai_care_alerts: [],
       tanggal_kontrol: {
         tanggal: "",
         waktu: "09:00 WIB",
         poli: "",
         lokasi: "",
       },
-      ai_care_alerts: [],
     };
 
     const analysisId = `analysis-${Date.now()}`;
@@ -225,16 +384,16 @@ export const startManualCarePlan = async (req, res) => {
 };
 
 /**
- * TAHAP 8 — VERIFIKASI KELUARGA & AKTIVASI RENCANA PERAWATAN
+ * Verifikasi & Penyesuaian Rencana Perawatan oleh Keluarga
  * POST /api/documents/verify
  */
 export const verifyAndActivateCarePlan = async (req, res) => {
   try {
     const {
-      patientId = "patient-1",
+      patientId = "827c114e-60af-41dd-a618-6aed07229be4",
       analysisId,
       verifiedData,
-      caregiverName = "Siti Rahma",
+      caregiverName = "Keluarga Pendamping",
     } = req.body;
 
     if (!verifiedData) {
@@ -247,58 +406,66 @@ export const verifyAndActivateCarePlan = async (req, res) => {
     const {
       diagnosis_utama,
       daftar_obat = [],
+      checklist_perawatan = [],
       instruksi_perawatan_rumah = [],
       tanggal_kontrol,
       ai_care_alerts = [],
     } = verifiedData;
 
-    // 1. Simpan atau perbarui Diagnosis terverifikasi
-    if (diagnosis_utama?.value) {
+    // 1. Simpan Diagnosis
+    const diagText =
+      typeof diagnosis_utama === "string" ? diagnosis_utama : diagnosis_utama?.value;
+    if (diagText && diagText.trim()) {
       memoryStore.diagnoses.unshift({
         id: `diag-${Date.now()}`,
         patientId,
-        name: diagnosis_utama.value,
-        source: diagnosis_utama.source || "Ringkasan Medis",
-        confidence: diagnosis_utama.confidence || "high",
+        name: diagText.trim(),
+        source: "Verifikasi Manual Keluarga",
+        confidence: "high",
         status: "VERIFIED",
         createdAt: new Date().toISOString(),
       });
     }
 
-    // 2. Aktifkan Daftar Obat & Buat Jadwal Minum Obat
+    // 2. Tambahkan / Update Obat
     const addedMedications = [];
     daftar_obat
       .filter((obat) => obat.nama_obat && obat.nama_obat.trim())
       .forEach((obat, idx) => {
-        const medId = `med-${Date.now()}-${idx}`;
+        let times = obat.waktu_minum;
+        if (!times) times = ["Pagi"];
+        else if (!Array.isArray(times)) times = [String(times)];
+
         const newMed = {
-          id: medId,
+          id: `med-${Date.now()}-${idx}`,
           patientId,
           name: obat.nama_obat.trim(),
           dosage: obat.dosis || "Sesuai petunjuk",
           frequency: obat.frekuensi || "Terjadwal",
-          times: JSON.stringify(Array.isArray(obat.waktu_minum) ? obat.waktu_minum : [obat.waktu_minum || "Pagi"]),
-          notes: obat.catatan || "",
+          times: JSON.stringify(times),
+          notes: obat.instruksi_khusus || obat.catatan || "",
           verificationStatus: "verified",
           isActive: true,
           createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         };
         memoryStore.medications.push(newMed);
         addedMedications.push(newMed);
       });
 
-    // 3. Aktifkan Checklist Aktivitas Harian Perawatan Rumah
+    // 3. Tambahkan / Update Checklist
+    const careList = checklist_perawatan.length > 0 ? checklist_perawatan : instruksi_perawatan_rumah;
     const addedChecklists = [];
-    instruksi_perawatan_rumah
-      .filter((ins) => ins.tindakan && ins.tindakan.trim())
+    careList
+      .filter((ins) => (ins.deskripsi_tugas || ins.tindakan) && (ins.deskripsi_tugas || ins.tindakan).trim())
       .forEach((instruksi, idx) => {
-        const chkId = `chk-${Date.now()}-${idx}`;
+        const text = (instruksi.deskripsi_tugas || instruksi.tindakan).trim();
         const newChk = {
-          id: chkId,
+          id: `chk-${Date.now()}-${idx}`,
           patientId,
-          title: instruksi.tindakan.length > 50 ? instruksi.tindakan.substring(0, 48) + "..." : instruksi.tindakan,
-          category: instruksi.kategori || "Lainnya",
-          description: instruksi.tindakan,
+          title: text.length > 50 ? text.substring(0, 48) + "..." : text,
+          category: instruksi.kategori || "Aktivitas",
+          description: text,
           frequency: "Setiap Hari",
           isActive: true,
           createdAt: new Date().toISOString(),
@@ -307,27 +474,30 @@ export const verifyAndActivateCarePlan = async (req, res) => {
         addedChecklists.push(newChk);
       });
 
-    // 5. Daftarkan Peringatan Keselamatan AI yang masih aktif
+    // 4. Tambahkan Peringatan AI
     ai_care_alerts.forEach((alert, idx) => {
+      const msg = alert.deskripsi_peringatan || alert.pesan || alert.message;
+      if (!msg) return;
+      const level = (alert.tipe || alert.level || "warning").toLowerCase();
       memoryStore.careAlerts.unshift({
         id: `alert-${Date.now()}-${idx}`,
         patientId,
-        level: alert.level || "warning",
-        category: alert.kategori || "Peringatan Medis",
-        message: alert.pesan,
-        source: "Verifikasi Dokumen Medis",
+        level: level === "danger" ? "danger" : "warning",
+        category: alert.judul || alert.kategori || "Peringatan Medis",
+        message: msg,
+        source: "Verifikasi Manual",
         status: "ACTIVE",
         createdAt: new Date().toISOString(),
       });
     });
 
-    // 6. Catat log riwayat verifikasi keluarga
+    // 5. Catat log riwayat
     memoryStore.careNotes.unshift({
       id: `note-${Date.now()}`,
       patientId,
       authorName: caregiverName,
       category: "Verifikasi Rencana Perawatan",
-      content: `Rencana perawatan mandiri di rumah telah diverifikasi dan diaktifkan oleh ${caregiverName}. Terverifikasi ${addedMedications.length} obat dan ${addedChecklists.length} checklist harian.`,
+      content: `Rencana perawatan mandiri berhasil diverifikasi oleh ${caregiverName}. Ditambahkan ${addedMedications.length} obat dan ${addedChecklists.length} aktivitas panduan harian.`,
       createdAt: new Date().toISOString(),
     });
 
@@ -339,7 +509,6 @@ export const verifyAndActivateCarePlan = async (req, res) => {
       summary: {
         medicationsCount: addedMedications.length,
         checklistsCount: addedChecklists.length,
-        appointmentActive: !!(tanggal_kontrol && tanggal_kontrol.tanggal),
       },
     });
   } catch (error) {
@@ -358,8 +527,18 @@ export const verifyAndActivateCarePlan = async (req, res) => {
  */
 export const getDocuments = async (req, res) => {
   try {
-    const patientId = req.query.patientId || memoryStore.patients[0]?.id || "patient-1";
-    const docs = memoryStore.documents.filter((d) => d.patientId === patientId);
+    let patientId = req.query.patientId;
+    if (!patientId) {
+      const defaultPatient =
+        memoryStore.patients.find(
+          (p) => p.name && p.name.toLowerCase().includes("jusmanidar")
+        ) || memoryStore.patients[0];
+      patientId = defaultPatient?.id;
+    }
+
+    const docs = memoryStore.documents.filter(
+      (d) => !patientId || d.patientId === patientId
+    );
 
     return res.status(200).json({
       success: true,

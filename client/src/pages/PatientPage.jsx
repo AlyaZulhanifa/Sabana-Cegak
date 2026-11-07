@@ -19,7 +19,12 @@ import {
   deletePatient,
 } from "../services/api";
 
-export const PatientPage = ({ activePatient, onSelectPatient }) => {
+export const PatientPage = ({
+  currentUser,
+  activePatient,
+  onSelectPatient,
+  onPatientsChange,
+}) => {
   const [patients, setPatients] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingPatient, setEditingPatient] = useState(null);
@@ -57,7 +62,7 @@ export const PatientPage = ({ activePatient, onSelectPatient }) => {
       gender: "Perempuan",
       dischargeDate: new Date().toISOString().split("T")[0],
       hospitalName: "",
-      primaryCaregiver: activePatient?.primaryCaregiver || "",
+      primaryCaregiver: activePatient?.primaryCaregiver || currentUser?.name || "",
       relationship: "Anak Kandung",
     });
     setShowAddModal(true);
@@ -89,14 +94,16 @@ export const PatientPage = ({ activePatient, onSelectPatient }) => {
         const res = await updatePatient(editingPatient.id, formData);
         setShowAddModal(false);
         setEditingPatient(null);
-        loadPatients();
+        await loadPatients();
+        if (onPatientsChange) await onPatientsChange();
         if (activePatient?.id === editingPatient.id && onSelectPatient && res.data) {
           onSelectPatient(res.data);
         }
       } else {
         const res = await createPatient(formData);
         setShowAddModal(false);
-        loadPatients();
+        await loadPatients();
+        if (onPatientsChange) await onPatientsChange(res.data?.id);
         if (onSelectPatient && res.data) {
           onSelectPatient(res.data);
         }
@@ -107,20 +114,20 @@ export const PatientPage = ({ activePatient, onSelectPatient }) => {
   };
 
   const handleDeletePatient = async (id, name) => {
-    if (patients.length <= 1) {
-      return alert("Minimal harus ada satu profil pasien yang terdaftar.");
-    }
-    if (!window.confirm(`Yakin ingin menghapus profil pasien "${name}"?`)) {
+    if (!window.confirm(`Yakin ingin menghapus profil pasien "${name}"? Seluruh riwayat obat dan checklist terkait akan terhapus.`)) {
       return;
     }
 
     try {
       await deletePatient(id);
-      loadPatients();
+      await loadPatients();
+      if (onPatientsChange) await onPatientsChange();
       if (activePatient?.id === id) {
         const remaining = patients.filter((p) => p.id !== id);
         if (remaining.length > 0 && onSelectPatient) {
           onSelectPatient(remaining[0]);
+        } else if (onSelectPatient) {
+          onSelectPatient(null);
         }
       }
     } catch (err) {
@@ -153,6 +160,25 @@ export const PatientPage = ({ activePatient, onSelectPatient }) => {
 
       {/* Patient Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {patients.length === 0 && (
+          <div className="col-span-full bg-white rounded-2xl border-2 border-dashed border-slate-200 p-8 sm:p-12 text-center">
+            <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-[#153C35] flex items-center justify-center mx-auto mb-3">
+              <Users className="w-7 h-7" />
+            </div>
+            <h3 className="text-base font-bold text-slate-800">Belum Ada Profil Pasien</h3>
+            <p className="text-xs text-slate-500 max-w-md mx-auto mt-1 mb-5">
+              Akun Anda belum memiliki data profil pasien keluarga yang dipantau. Tambahkan data pasien untuk mulai mendampingi perawatan pasca pulang RS.
+            </p>
+            <button
+              onClick={handleOpenAdd}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-[#153C35] hover:bg-[#0c2420] transition-colors shadow-xs"
+            >
+              <UserPlus className="w-4 h-4" />
+              <span>Tambah Profil Pasien Pertama</span>
+            </button>
+          </div>
+        )}
+
         {patients.map((p) => {
           const isActive = activePatient?.id === p.id;
 

@@ -35,6 +35,11 @@ export const HistoryPage = ({ activePatient }) => {
   const patientId = activePatient?.id;
 
   const loadHistory = async () => {
+    if (!patientId) {
+      setHistory([]);
+      return;
+    }
+
     try {
       const res = await getCareHistory(patientId);
       setHistory(res.data || []);

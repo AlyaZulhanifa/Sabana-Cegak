@@ -47,9 +47,22 @@ export const CareChecklistPage = ({ activePatient }) => {
   const patientId = activePatient?.id;
 
   const loadData = async () => {
+    if (!patientId) {
+      setChecklists([]);
+      return;
+    }
+
     try {
       const res = await getCareChecklists(patientId);
-      setChecklists(res.data || []);
+      const list = res.data || [];
+      setChecklists(list);
+      const map = {};
+      list.forEach((item) => {
+        if (item.isCompletedToday) {
+          map[item.id] = "COMPLETED";
+        }
+      });
+      setCompletedMap((prev) => ({ ...map, ...prev }));
     } catch (e) {
       console.error("Gagal memuat checklist:", e);
     }

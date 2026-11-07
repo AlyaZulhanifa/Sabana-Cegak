@@ -8,125 +8,385 @@
       "role": "FAMILY_CAREGIVER",
       "phone": "083167876044",
       "createdAt": "2026-11-07T08:07:50.912Z"
+    },
+    {
+      "id": "user-1794042669469-6n00q5",
+      "name": "Anggun Weldiana",
+      "email": "jeongharu210405@gmail.com",
+      "password": "88ff9744af78ee872ec1b973d561db12:666c74222e333ad7c2cf857d1d7e82c601cd863af22075bb92d42885a64a1b7486bb4515897b2b768ad58fa878431e20e924c5a0444e4fade07cb0f84df1b723",
+      "role": "FAMILY_CAREGIVER",
+      "phone": null,
+      "createdAt": "2026-11-07T09:11:09.469Z"
     }
   ],
   "patients": [
     {
-      "id": "patient-1794039237817",
-      "name": "Bapak Budi",
+      "id": "8896f6e4-ff23-412a-b69d-b0a6941d10f4",
+      "name": "Bapak Hendra",
       "birthDate": null,
-      "age": 50,
+      "age": 67,
       "gender": "Laki-laki",
-      "dischargeDate": "2026-11-07",
-      "hospitalName": "RS Djamil",
-      "primaryCaregiver": "Anggun",
+      "dischargeDate": "2026-11-03",
+      "hospitalName": "RSUD Pariaman",
+      "primaryCaregiver": "Rahma Fauzia",
       "relationship": "Anak Kandung",
-      "createdAt": "2026-11-07T08:13:57.817Z",
-      "updatedAt": "2026-11-07T08:13:57.817Z"
+      "createdAt": "2026-11-07T10:16:56.489Z",
+      "updatedAt": "2026-11-07T10:16:56.489Z",
+      "userId": "user-1794038870912-179tkh"
+    },
+    {
+      "id": "827c114e-60af-41dd-a618-6aed07229be4",
+      "name": "Ibu Jusmanidar",
+      "birthDate": null,
+      "age": 65,
+      "gender": "Perempuan",
+      "dischargeDate": "2026-11-07",
+      "hospitalName": "RSUD Padang",
+      "primaryCaregiver": "Anggun Weldiana",
+      "relationship": "Anak Kandung",
+      "createdAt": "2026-11-07T10:13:20.513Z",
+      "updatedAt": "2026-11-07T10:13:20.513Z",
+      "userId": "user-1794042669469-6n00q5"
     }
   ],
-  "diagnoses": [],
-  "medications": [],
-  "medicationLogs": [],
+  "diagnoses": [
+    {
+      "id": "diag-1794049697285",
+      "patientId": "827c114e-60af-41dd-a618-6aed07229be4",
+      "name": "Acute Ischemic Stroke",
+      "source": "Resume Medis RS",
+      "confidence": "high",
+      "status": "VERIFIED",
+      "createdAt": "2026-11-07T11:08:17.285Z"
+    }
+  ],
+  "medications": [
+    {
+      "id": "med-1794049697286-0",
+      "patientId": "827c114e-60af-41dd-a618-6aed07229be4",
+      "name": "Clopidogrel 75 mg",
+      "dosage": "1 tablet",
+      "frequency": "1 kali sehari",
+      "times": "[\"Pagi\"]",
+      "notes": "Diminum setelah makan pagi",
+      "verificationStatus": "verified",
+      "sourceDocumentId": "doc-1794049681106",
+      "isActive": true,
+      "createdAt": "2026-11-07T11:08:17.286Z",
+      "updatedAt": "2026-11-07T11:08:17.286Z"
+    },
+    {
+      "id": "med-1794049697286-1",
+      "patientId": "827c114e-60af-41dd-a618-6aed07229be4",
+      "name": "Atorvastatin 20 mg",
+      "dosage": "1 tablet",
+      "frequency": "1 kali sehari",
+      "times": "[\"Malam\"]",
+      "notes": "Diminum malam hari",
+      "verificationStatus": "verified",
+      "sourceDocumentId": "doc-1794049681106",
+      "isActive": true,
+      "createdAt": "2026-11-07T11:08:17.286Z",
+      "updatedAt": "2026-11-07T11:08:17.286Z"
+    },
+    {
+      "id": "med-1794049697286-2",
+      "patientId": "827c114e-60af-41dd-a618-6aed07229be4",
+      "name": "Amlodipine 10 mg",
+      "dosage": "1 tablet",
+      "frequency": "1 kali sehari",
+      "times": "[\"Pagi\"]",
+      "notes": "Diminum pagi hari",
+      "verificationStatus": "verified",
+      "sourceDocumentId": "doc-1794049681106",
+      "isActive": true,
+      "createdAt": "2026-11-07T11:08:17.286Z",
+      "updatedAt": "2026-11-07T11:08:17.286Z"
+    },
+    {
+      "id": "med-1794049697286-3",
+      "patientId": "827c114e-60af-41dd-a618-6aed07229be4",
+      "name": "Metformin 500 mg",
+      "dosage": "1 tablet",
+      "frequency": "2 kali sehari",
+      "times": "[\"Pagi\",\"Malam\"]",
+      "notes": "Diminum bersama makanan",
+      "verificationStatus": "verified",
+      "sourceDocumentId": "doc-1794049681106",
+      "isActive": true,
+      "createdAt": "2026-11-07T11:08:17.286Z",
+      "updatedAt": "2026-11-07T11:08:17.286Z"
+    },
+    {
+      "id": "med-1794049697286-4",
+      "patientId": "827c114e-60af-41dd-a618-6aed07229be4",
+      "name": "Citicoline 500 mg",
+      "dosage": "1 tablet",
+      "frequency": "2 kali sehari",
+      "times": "[\"Pagi\",\"Malam\"]",
+      "notes": "Diminum sesudah makan",
+      "verificationStatus": "verified",
+      "sourceDocumentId": "doc-1794049681106",
+      "isActive": true,
+      "createdAt": "2026-11-07T11:08:17.286Z",
+      "updatedAt": "2026-11-07T11:08:17.286Z"
+    }
+  ],
+  "medicationLogs": [
+    {
+      "id": "medlog-1794049994565",
+      "medicationId": "med-1794049697286-0",
+      "medicationName": "Clopidogrel 75 mg",
+      "patientId": "827c114e-60af-41dd-a618-6aed07229be4",
+      "scheduledTime": "1 kali sehari",
+      "takenAt": "2026-11-07T11:13:14.565Z",
+      "status": "GIVEN",
+      "reason": "Telah diberikan kepada pasien",
+      "recordedByName": "Anggun Weldiana"
+    }
+  ],
   "careInstructions": [],
-  "careChecklists": [],
+  "careChecklists": [
+    {
+      "id": "chk-1794049697286-0",
+      "patientId": "827c114e-60af-41dd-a618-6aed07229be4",
+      "title": "Menjalankan Diet Stroke / DM 1700 kcal dengan bentuk maka...",
+      "category": "Nutrisi",
+      "description": "Menjalankan Diet Stroke / DM 1700 kcal dengan bentuk makanan lunak serta hindari makanan tinggi garam",
+      "frequency": "Setiap Hari",
+      "sourceDocumentId": "doc-1794049681106",
+      "isActive": true,
+      "createdAt": "2026-11-07T11:08:17.286Z"
+    },
+    {
+      "id": "chk-1794049697286-1",
+      "patientId": "827c114e-60af-41dd-a618-6aed07229be4",
+      "title": "Melanjutkan fisioterapi 2 kali seminggu sesuai jadwal di ...",
+      "category": "Aktivitas",
+      "description": "Melanjutkan fisioterapi 2 kali seminggu sesuai jadwal di Poliklinik Rehabilitasi Medik",
+      "frequency": "Setiap Hari",
+      "sourceDocumentId": "doc-1794049681106",
+      "isActive": true,
+      "createdAt": "2026-11-07T11:08:17.286Z"
+    },
+    {
+      "id": "chk-1794049697286-2",
+      "patientId": "827c114e-60af-41dd-a618-6aed07229be4",
+      "title": "Melakukan kontrol dan pemantauan tekanan darah secara ber...",
+      "category": "Aktivitas",
+      "description": "Melakukan kontrol dan pemantauan tekanan darah secara berkala",
+      "frequency": "Setiap Hari",
+      "sourceDocumentId": "doc-1794049681106",
+      "isActive": true,
+      "createdAt": "2026-11-07T11:08:17.286Z"
+    }
+  ],
   "careChecklistLogs": [],
-  "careAlerts": [],
+  "careAlerts": [
+    {
+      "id": "alert-1794049697287-1",
+      "patientId": "827c114e-60af-41dd-a618-6aed07229be4",
+      "level": "danger",
+      "category": "Tanda Bahaya Stroke Berulang",
+      "message": "Waspadai jika muncul kembali keluhan mendadak seperti kelemahan anggota gerak tubuh, bicara pelo, mulut mencong, atau penurunan kesadaran. Segera hubungi IGD (021-292-177-77) atau bawa ke unit gawat darurat terdekat.",
+      "source": "Gemini AI Medical Safety Audit",
+      "sourceDocumentId": "doc-1794049681106",
+      "status": "ACTIVE",
+      "createdAt": "2026-11-07T11:08:17.287Z"
+    },
+    {
+      "id": "alert-1794049697287-0",
+      "patientId": "827c114e-60af-41dd-a618-6aed07229be4",
+      "level": "warning",
+      "category": "Pemantauan Hipertensi & Diabetes Melitus",
+      "message": "Pasien memiliki riwayat hipertensi dan diabetes melitus tipe 2. Wajib melakukan kontrol rutin tekanan darah dan kadar gula darah, serta mematuhi jadwal kontrol ke poliklinik pada 12 November 2026.",
+      "source": "Gemini AI Medical Safety Audit",
+      "sourceDocumentId": "doc-1794049681106",
+      "status": "ACTIVE",
+      "createdAt": "2026-11-07T11:08:17.287Z"
+    }
+  ],
   "appointments": [],
-  "careNotes": [],
+  "careNotes": [
+    {
+      "id": "note-1794049697287",
+      "patientId": "827c114e-60af-41dd-a618-6aed07229be4",
+      "authorName": "Gemini AI Medical Parser",
+      "category": "Ekstraksi Dokumen Medis",
+      "content": "Berkas medis \"doc-1794045048521-CamScanner_07-11-2026_10.41.pdf\" berhasil diekstrak dan tersimpan ke database Ibu Jusmanidar. Sistem mendaftarkan 5 obat aktif, 3 checklist panduan harian, dan 2 peringatan keselamatan AI.",
+      "createdAt": "2026-11-07T11:08:17.287Z"
+    }
+  ],
   "documents": [
     {
-      "id": "doc-manual-1794041248556",
-      "patientId": "patient-1794039237817",
+      "id": "doc-manual-1794050163740",
+      "patientId": "8896f6e4-ff23-412a-b69d-b0a6941d10f4",
       "fileName": "Entri Rencana Perawatan Mandiri.pdf",
       "fileType": "application/pdf",
       "fileSize": 0,
       "status": "MANUAL_ENTRY",
-      "uploadedAt": "2026-11-07T08:47:28.556Z"
+      "uploadedAt": "2026-11-07T11:16:03.740Z"
     },
     {
-      "id": "doc-1794041245512",
-      "patientId": "patient-1794039237817",
-      "fileName": "CamScanner 07-11-2026 10.41.pdf",
-      "diskFileName": "doc-1794041245512-CamScanner_07-11-2026_10.41.pdf",
+      "id": "doc-1794049681106",
+      "patientId": "827c114e-60af-41dd-a618-6aed07229be4",
+      "fileName": "doc-1794045048521-CamScanner_07-11-2026_10.41.pdf",
+      "diskFileName": "doc-1794049681106-doc-1794045048521-CamScanner_07-11-2026_10.41.pdf",
+      "fileType": "application/pdf",
+      "fileSize": 1163661,
+      "status": "ANALYZED",
+      "uploadedAt": "2026-11-07T11:08:01.110Z"
+    },
+    {
+      "id": "doc-1794049305736",
+      "patientId": "827c114e-60af-41dd-a618-6aed07229be4",
+      "fileName": "doc-1794045048521-CamScanner_07-11-2026_10.41.pdf",
+      "diskFileName": "doc-1794049305736-doc-1794045048521-CamScanner_07-11-2026_10.41.pdf",
       "fileType": "application/pdf",
       "fileSize": 1163661,
       "status": "ANALYZING",
-      "uploadedAt": "2026-11-07T08:47:25.521Z"
-    },
-    {
-      "id": "doc-1794041133619",
-      "patientId": "patient-1794039237817",
-      "fileName": "CamScanner 07-11-2026 10.41.pdf",
-      "diskFileName": "doc-1794041133619-CamScanner_07-11-2026_10.41.pdf",
-      "fileType": "application/pdf",
-      "fileSize": 1163661,
-      "status": "ANALYZING",
-      "uploadedAt": "2026-11-07T08:45:33.628Z"
-    },
-    {
-      "id": "doc-1794040897385",
-      "patientId": "patient-1794039237817",
-      "fileName": "CamScanner 07-11-2026 10.41.pdf",
-      "diskFileName": "doc-1794040897385-CamScanner_07-11-2026_10.41.pdf",
-      "fileType": "application/pdf",
-      "fileSize": 1163661,
-      "status": "ANALYZING",
-      "uploadedAt": "2026-11-07T08:41:37.404Z"
-    },
-    {
-      "id": "doc-1794038894551",
-      "patientId": "patient-1",
-      "fileName": "CamScanner 07-11-2026 10.41.pdf",
-      "diskFileName": "doc-1794038894551-CamScanner_07-11-2026_10.41.pdf",
-      "fileType": "application/pdf",
-      "fileSize": 1163661,
-      "status": "ANALYZING",
-      "uploadedAt": "2026-11-07T08:08:14.561Z"
+      "uploadedAt": "2026-11-07T11:01:45.738Z"
     }
   ],
   "analyses": [
     {
-      "id": "analysis-1794041248556",
-      "documentId": "doc-manual-1794041248556",
-      "patientId": "patient-1794039237817",
-      "rawJson": "{\"diagnosis_utama\":{\"value\":\"Pasca Rawat Inap\",\"source\":\"Input Manual Keluarga\",\"confidence\":\"Tinggi\"},\"daftar_obat\":[{\"nama_obat\":\"\",\"dosis\":\"\",\"frekuensi\":\"3 kali sehari\",\"waktu_minum\":[\"Pagi\",\"Siang\",\"Malam\"],\"catatan\":\"Minum sesudah makan\",\"verification_status\":\"pending\"}],\"instruksi_perawatan_rumah\":[{\"kategori\":\"Nutrisi\",\"tindakan\":\"Pola makan bergizi seimbang dan minum air putih cukup.\",\"verification_status\":\"pending\"}],\"tanggal_kontrol\":{\"tanggal\":\"\",\"waktu\":\"09:00 WIB\",\"poli\":\"\",\"lokasi\":\"\"},\"ai_care_alerts\":[]}",
+      "id": "analysis-1794050163740",
+      "documentId": "doc-manual-1794050163740",
+      "patientId": "8896f6e4-ff23-412a-b69d-b0a6941d10f4",
+      "rawJson": "{\"diagnosis_utama\":\"Pasca Rawat Inap\",\"daftar_obat\":[{\"nama_obat\":\"\",\"dosis\":\"1 Tablet\",\"frekuensi\":\"2 kali sehari\",\"waktu_minum\":[\"Pagi\",\"Malam\"],\"instruksi_khusus\":\"Minum sesudah makan\"}],\"checklist_perawatan\":[{\"kategori\":\"Nutrisi\",\"deskripsi_tugas\":\"Pola makan bergizi seimbang dan minum air putih cukup.\"}],\"ai_care_alerts\":[],\"tanggal_kontrol\":{\"tanggal\":\"\",\"waktu\":\"09:00 WIB\",\"poli\":\"\",\"lokasi\":\"\"}}",
       "status": "PENDING_VERIFICATION",
-      "analyzedAt": "2026-11-07T08:47:28.556Z",
+      "analyzedAt": "2026-11-07T11:16:03.740Z",
       "data": {
-        "diagnosis_utama": {
-          "value": "Pasca Rawat Inap",
-          "source": "Input Manual Keluarga",
-          "confidence": "Tinggi"
-        },
+        "diagnosis_utama": "Pasca Rawat Inap",
         "daftar_obat": [
           {
             "nama_obat": "",
-            "dosis": "",
-            "frekuensi": "3 kali sehari",
+            "dosis": "1 Tablet",
+            "frekuensi": "2 kali sehari",
             "waktu_minum": [
               "Pagi",
-              "Siang",
               "Malam"
             ],
-            "catatan": "Minum sesudah makan",
-            "verification_status": "pending"
+            "instruksi_khusus": "Minum sesudah makan"
           }
         ],
-        "instruksi_perawatan_rumah": [
+        "checklist_perawatan": [
           {
             "kategori": "Nutrisi",
-            "tindakan": "Pola makan bergizi seimbang dan minum air putih cukup.",
-            "verification_status": "pending"
+            "deskripsi_tugas": "Pola makan bergizi seimbang dan minum air putih cukup."
           }
         ],
+        "ai_care_alerts": [],
         "tanggal_kontrol": {
           "tanggal": "",
           "waktu": "09:00 WIB",
           "poli": "",
           "lokasi": ""
-        },
-        "ai_care_alerts": []
+        }
+      }
+    },
+    {
+      "id": "analysis-1794049697287",
+      "documentId": "doc-1794049681106",
+      "patientId": "827c114e-60af-41dd-a618-6aed07229be4",
+      "rawJson": "{\"diagnosis_utama\":\"Acute Ischemic Stroke\",\"daftar_obat\":[{\"nama_obat\":\"Clopidogrel 75 mg\",\"dosis\":\"1 tablet\",\"frekuensi\":\"1 kali sehari\",\"waktu_minum\":[\"Pagi\"],\"instruksi_khusus\":\"Diminum setelah makan pagi\",\"catatan\":\"Diminum setelah makan pagi\"},{\"nama_obat\":\"Atorvastatin 20 mg\",\"dosis\":\"1 tablet\",\"frekuensi\":\"1 kali sehari\",\"waktu_minum\":[\"Malam\"],\"instruksi_khusus\":\"Diminum malam hari\",\"catatan\":\"Diminum malam hari\"},{\"nama_obat\":\"Amlodipine 10 mg\",\"dosis\":\"1 tablet\",\"frekuensi\":\"1 kali sehari\",\"waktu_minum\":[\"Pagi\"],\"instruksi_khusus\":\"Diminum pagi hari\",\"catatan\":\"Diminum pagi hari\"},{\"nama_obat\":\"Metformin 500 mg\",\"dosis\":\"1 tablet\",\"frekuensi\":\"2 kali sehari\",\"waktu_minum\":[\"Pagi\",\"Malam\"],\"instruksi_khusus\":\"Diminum bersama makanan\",\"catatan\":\"Diminum bersama makanan\"},{\"nama_obat\":\"Citicoline 500 mg\",\"dosis\":\"1 tablet\",\"frekuensi\":\"2 kali sehari\",\"waktu_minum\":[\"Pagi\",\"Malam\"],\"instruksi_khusus\":\"Diminum sesudah makan\",\"catatan\":\"Diminum sesudah makan\"}],\"checklist_perawatan\":[{\"kategori\":\"Nutrisi\",\"deskripsi_tugas\":\"Menjalankan Diet Stroke / DM 1700 kcal dengan bentuk makanan lunak serta hindari makanan tinggi garam\",\"tindakan\":\"Menjalankan Diet Stroke / DM 1700 kcal dengan bentuk makanan lunak serta hindari makanan tinggi garam\"},{\"kategori\":\"Aktivitas\",\"deskripsi_tugas\":\"Melanjutkan fisioterapi 2 kali seminggu sesuai jadwal di Poliklinik Rehabilitasi Medik\",\"tindakan\":\"Melanjutkan fisioterapi 2 kali seminggu sesuai jadwal di Poliklinik Rehabilitasi Medik\"},{\"kategori\":\"Aktivitas\",\"deskripsi_tugas\":\"Melakukan kontrol dan pemantauan tekanan darah secara berkala\",\"tindakan\":\"Melakukan kontrol dan pemantauan tekanan darah secara berkala\"}],\"ai_care_alerts\":[{\"tipe\":\"Warning\",\"level\":\"warning\",\"judul\":\"Pemantauan Hipertensi & Diabetes Melitus\",\"deskripsi_peringatan\":\"Pasien memiliki riwayat hipertensi dan diabetes melitus tipe 2. Wajib melakukan kontrol rutin tekanan darah dan kadar gula darah, serta mematuhi jadwal kontrol ke poliklinik pada 12 November 2026.\",\"pesan\":\"Pasien memiliki riwayat hipertensi dan diabetes melitus tipe 2. Wajib melakukan kontrol rutin tekanan darah dan kadar gula darah, serta mematuhi jadwal kontrol ke poliklinik pada 12 November 2026.\"},{\"tipe\":\"Danger\",\"level\":\"danger\",\"judul\":\"Tanda Bahaya Stroke Berulang\",\"deskripsi_peringatan\":\"Waspadai jika muncul kembali keluhan mendadak seperti kelemahan anggota gerak tubuh, bicara pelo, mulut mencong, atau penurunan kesadaran. Segera hubungi IGD (021-292-177-77) atau bawa ke unit gawat darurat terdekat.\",\"pesan\":\"Waspadai jika muncul kembali keluhan mendadak seperti kelemahan anggota gerak tubuh, bicara pelo, mulut mencong, atau penurunan kesadaran. Segera hubungi IGD (021-292-177-77) atau bawa ke unit gawat darurat terdekat.\"}],\"tanggal_kontrol\":{\"tanggal\":\"12 November 2026\",\"waktu\":null,\"poli\":\"Poliklinik Saraf & Rehabilitasi Medik\",\"lokasi\":null}}",
+      "status": "VERIFIED",
+      "analyzedAt": "2026-11-07T11:08:17.287Z",
+      "data": {
+        "diagnosis_utama": "Acute Ischemic Stroke",
+        "daftar_obat": [
+          {
+            "nama_obat": "Clopidogrel 75 mg",
+            "dosis": "1 tablet",
+            "frekuensi": "1 kali sehari",
+            "waktu_minum": [
+              "Pagi"
+            ],
+            "instruksi_khusus": "Diminum setelah makan pagi",
+            "catatan": "Diminum setelah makan pagi"
+          },
+          {
+            "nama_obat": "Atorvastatin 20 mg",
+            "dosis": "1 tablet",
+            "frekuensi": "1 kali sehari",
+            "waktu_minum": [
+              "Malam"
+            ],
+            "instruksi_khusus": "Diminum malam hari",
+            "catatan": "Diminum malam hari"
+          },
+          {
+            "nama_obat": "Amlodipine 10 mg",
+            "dosis": "1 tablet",
+            "frekuensi": "1 kali sehari",
+            "waktu_minum": [
+              "Pagi"
+            ],
+            "instruksi_khusus": "Diminum pagi hari",
+            "catatan": "Diminum pagi hari"
+          },
+          {
+            "nama_obat": "Metformin 500 mg",
+            "dosis": "1 tablet",
+            "frekuensi": "2 kali sehari",
+            "waktu_minum": [
+              "Pagi",
+              "Malam"
+            ],
+            "instruksi_khusus": "Diminum bersama makanan",
+            "catatan": "Diminum bersama makanan"
+          },
+          {
+            "nama_obat": "Citicoline 500 mg",
+            "dosis": "1 tablet",
+            "frekuensi": "2 kali sehari",
+            "waktu_minum": [
+              "Pagi",
+              "Malam"
+            ],
+            "instruksi_khusus": "Diminum sesudah makan",
+            "catatan": "Diminum sesudah makan"
+          }
+        ],
+        "checklist_perawatan": [
+          {
+            "kategori": "Nutrisi",
+            "deskripsi_tugas": "Menjalankan Diet Stroke / DM 1700 kcal dengan bentuk makanan lunak serta hindari makanan tinggi garam",
+            "tindakan": "Menjalankan Diet Stroke / DM 1700 kcal dengan bentuk makanan lunak serta hindari makanan tinggi garam"
+          },
+          {
+            "kategori": "Aktivitas",
+            "deskripsi_tugas": "Melanjutkan fisioterapi 2 kali seminggu sesuai jadwal di Poliklinik Rehabilitasi Medik",
+            "tindakan": "Melanjutkan fisioterapi 2 kali seminggu sesuai jadwal di Poliklinik Rehabilitasi Medik"
+          },
+          {
+            "kategori": "Aktivitas",
+            "deskripsi_tugas": "Melakukan kontrol dan pemantauan tekanan darah secara berkala",
+            "tindakan": "Melakukan kontrol dan pemantauan tekanan darah secara berkala"
+          }
+        ],
+        "ai_care_alerts": [
+          {
+            "tipe": "Warning",
+            "level": "warning",
+            "judul": "Pemantauan Hipertensi & Diabetes Melitus",
+            "deskripsi_peringatan": "Pasien memiliki riwayat hipertensi dan diabetes melitus tipe 2. Wajib melakukan kontrol rutin tekanan darah dan kadar gula darah, serta mematuhi jadwal kontrol ke poliklinik pada 12 November 2026.",
+            "pesan": "Pasien memiliki riwayat hipertensi dan diabetes melitus tipe 2. Wajib melakukan kontrol rutin tekanan darah dan kadar gula darah, serta mematuhi jadwal kontrol ke poliklinik pada 12 November 2026."
+          },
+          {
+            "tipe": "Danger",
+            "level": "danger",
+            "judul": "Tanda Bahaya Stroke Berulang",
+            "deskripsi_peringatan": "Waspadai jika muncul kembali keluhan mendadak seperti kelemahan anggota gerak tubuh, bicara pelo, mulut mencong, atau penurunan kesadaran. Segera hubungi IGD (021-292-177-77) atau bawa ke unit gawat darurat terdekat.",
+            "pesan": "Waspadai jika muncul kembali keluhan mendadak seperti kelemahan anggota gerak tubuh, bicara pelo, mulut mencong, atau penurunan kesadaran. Segera hubungi IGD (021-292-177-77) atau bawa ke unit gawat darurat terdekat."
+          }
+        ],
+        "tanggal_kontrol": {
+          "tanggal": "12 November 2026",
+          "waktu": null,
+          "poli": "Poliklinik Saraf & Rehabilitasi Medik",
+          "lokasi": null
+        }
       }
     }
   ]

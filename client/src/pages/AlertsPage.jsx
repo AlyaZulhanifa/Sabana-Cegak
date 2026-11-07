@@ -19,6 +19,12 @@ export const AlertsPage = ({ activePatient }) => {
   const patientId = activePatient?.id;
 
   const loadAlerts = async () => {
+    if (!patientId) {
+      setAlerts([]);
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     try {
       const res = await getCareAlerts(patientId);

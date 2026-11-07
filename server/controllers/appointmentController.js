@@ -6,7 +6,13 @@ import { memoryStore } from "../config/db.js";
  */
 export const getAppointments = async (req, res) => {
   try {
-    const patientId = req.query.patientId || memoryStore.patients[0]?.id || "patient-demo-1";
+    const patientId = req.query.patientId;
+    if (!patientId) {
+      return res.status(200).json({
+        success: true,
+        data: [],
+      });
+    }
     const appointments = memoryStore.appointments.filter((a) => a.patientId === patientId);
 
     return res.status(200).json({

@@ -6,10 +6,32 @@ import { memoryStore, saveDb } from "../config/db.js";
  */
 export const getCareChecklists = async (req, res) => {
   try {
-    const patientId = req.query.patientId || memoryStore.patients[0]?.id;
-    const checklists = memoryStore.careChecklists.filter(
-      (c) => c.patientId === patientId && c.isActive
-    );
+    let patientId = req.query.patientId;
+    if (!patientId) {
+      const defaultPatient =
+        memoryStore.patients.find(
+          (p) => p.name && p.name.toLowerCase().includes("jusmanidar")
+        ) || memoryStore.patients[0];
+      patientId = defaultPatient?.id;
+    }
+
+    const todayStr = new Date().toISOString().split("T")[0];
+
+    const checklists = memoryStore.careChecklists
+      .filter((c) => (!patientId || c.patientId === patientId) && c.isActive)
+      .map((c) => {
+        // Cek apakah aktivitas ini sudah diselesaikan hari ini
+        const isDoneToday = memoryStore.careChecklistLogs.some(
+          (log) =>
+            log.careChecklistId === c.id &&
+            log.status === "COMPLETED" &&
+            log.completedAt?.startsWith(todayStr)
+        );
+        return {
+          ...c,
+          isCompletedToday: isDoneToday,
+        };
+      });
 
     return res.status(200).json({
       success: true,
@@ -24,12 +46,12 @@ export const getCareChecklists = async (req, res) => {
 };
 
 /**
- * Menambahkan aktivitas checklist perawatan baru
+ * Menambahkan aktivitas checklist perawatan baru secara manual
  * POST /api/care/checklists
  */
 export const createCareChecklist = async (req, res) => {
   try {
-    const {
+    let {
       patientId,
       title,
       category = "Lainnya",
@@ -44,18 +66,37 @@ export const createCareChecklist = async (req, res) => {
       });
     }
 
+    if (!patientId) {
+      const defaultPatient =
+        memoryStore.patients.find(
+          (p) => p.name && p.name.toLowerCase().includes("jusmanidar")
+        ) || memoryStore.patients[0];
+      patientId = defaultPatient?.id || "827c114e-60af-41dd-a618-6aed07229be4";
+    }
+
     const newChk = {
       id: `chk-${Date.now()}`,
       patientId,
       title: title.trim(),
-      category,
-      description: description || "",
+      category: category.trim(),
+      description: description ? description.trim() : title.trim(),
       frequency,
       isActive: true,
       createdAt: new Date().toISOString(),
     };
 
     memoryStore.careChecklists.push(newChk);
+
+    // Catat log manual ke riwayat perawatan
+    memoryStore.careNotes.unshift({
+      id: `note-${Date.now()}`,
+      patientId,
+      authorName: "Keluarga Pendamping",
+      category: "Instruksi Perawatan Manual",
+      content: `Aktivitas "${newChk.title}" (${newChk.category}) ditambahkan manual ke checklist panduan harian pasien.`,
+      createdAt: new Date().toISOString(),
+    });
+
     saveDb();
 
     return res.status(201).json({
@@ -82,7 +123,7 @@ export const completeCareChecklist = async (req, res) => {
     const {
       status = "COMPLETED",
       reason,
-      recordedByName = "Siti Rahma",
+      recordedByName = "Caregiver",
     } = req.body;
 
     const checklist = memoryStore.careChecklists.find((c) => c.id === id);
@@ -101,7 +142,9 @@ export const completeCareChecklist = async (req, res) => {
       patientId: checklist.patientId,
       completedAt: new Date().toISOString(),
       status, // COMPLETED / SKIPPED
-      reason: reason || (status === "COMPLETED" ? "Aktivitas telah selesai dilakukan" : "Dilewati"),
+      reason:
+        reason ||
+        (status === "COMPLETED" ? "Aktivitas telah selesai dilakukan" : "Dilewati"),
       recordedByName,
     };
 
@@ -127,8 +170,18 @@ export const completeCareChecklist = async (req, res) => {
  */
 export const getCareAlerts = async (req, res) => {
   try {
-    const patientId = req.query.patientId || memoryStore.patients[0]?.id;
-    const alerts = memoryStore.careAlerts.filter((a) => a.patientId === patientId);
+    let patientId = req.query.patientId;
+    if (!patientId) {
+      const defaultPatient =
+        memoryStore.patients.find(
+          (p) => p.name && p.name.toLowerCase().includes("jusmanidar")
+        ) || memoryStore.patients[0];
+      patientId = defaultPatient?.id;
+    }
+
+    const alerts = memoryStore.careAlerts.filter(
+      (a) => !patientId || a.patientId === patientId
+    );
 
     return res.status(200).json({
       success: true,
@@ -177,15 +230,22 @@ export const resolveCareAlert = async (req, res) => {
 };
 
 /**
- * TAHAP 13 — FAMILY CARE MONITORING (Riwayat Perawatan Gabungan)
+ * Family Care Monitoring (Riwayat Perawatan Gabungan)
  * GET /api/care/history?patientId=...
  */
 export const getCareHistory = async (req, res) => {
   try {
-    const patientId = req.query.patientId || memoryStore.patients[0]?.id;
+    let patientId = req.query.patientId;
+    if (!patientId) {
+      const defaultPatient =
+        memoryStore.patients.find(
+          (p) => p.name && p.name.toLowerCase().includes("jusmanidar")
+        ) || memoryStore.patients[0];
+      patientId = defaultPatient?.id;
+    }
 
     const medLogs = memoryStore.medicationLogs
-      .filter((l) => l.patientId === patientId)
+      .filter((l) => !patientId || l.patientId === patientId)
       .map((l) => ({
         type: "MEDICATION",
         id: l.id,
@@ -198,7 +258,7 @@ export const getCareHistory = async (req, res) => {
       }));
 
     const chkLogs = memoryStore.careChecklistLogs
-      .filter((l) => l.patientId === patientId)
+      .filter((l) => !patientId || l.patientId === patientId)
       .map((l) => ({
         type: "CHECKLIST",
         id: l.id,
@@ -211,7 +271,7 @@ export const getCareHistory = async (req, res) => {
       }));
 
     const notes = memoryStore.careNotes
-      .filter((n) => n.patientId === patientId)
+      .filter((n) => !patientId || n.patientId === patientId)
       .map((n) => ({
         type: "NOTE",
         id: n.id,
@@ -246,10 +306,10 @@ export const getCareHistory = async (req, res) => {
  */
 export const createCareNote = async (req, res) => {
   try {
-    const {
+    let {
       patientId,
-      authorName = "Siti Rahma",
-      category = "Umum",
+      authorName = "Caregiver",
+      category = "Perkembangan Harian",
       content,
     } = req.body;
 
@@ -258,6 +318,14 @@ export const createCareNote = async (req, res) => {
         success: false,
         message: "Isi catatan tidak boleh kosong.",
       });
+    }
+
+    if (!patientId) {
+      const defaultPatient =
+        memoryStore.patients.find(
+          (p) => p.name && p.name.toLowerCase().includes("jusmanidar")
+        ) || memoryStore.patients[0];
+      patientId = defaultPatient?.id || "827c114e-60af-41dd-a618-6aed07229be4";
     }
 
     const newNote = {
@@ -316,4 +384,3 @@ export const deleteCareChecklist = async (req, res) => {
     });
   }
 };
-

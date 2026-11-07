@@ -6,9 +6,17 @@ import { memoryStore, saveDb } from "../config/db.js";
  */
 export const getMedications = async (req, res) => {
   try {
-    const patientId = req.query.patientId || memoryStore.patients[0]?.id;
+    let patientId = req.query.patientId;
+    if (!patientId) {
+      const defaultPatient =
+        memoryStore.patients.find(
+          (p) => p.name && p.name.toLowerCase().includes("jusmanidar")
+        ) || memoryStore.patients[0];
+      patientId = defaultPatient?.id;
+    }
+
     const medications = memoryStore.medications.filter(
-      (m) => m.patientId === patientId && m.isActive
+      (m) => (!patientId || m.patientId === patientId) && m.isActive
     );
 
     return res.status(200).json({
@@ -29,7 +37,7 @@ export const getMedications = async (req, res) => {
  */
 export const createMedication = async (req, res) => {
   try {
-    const {
+    let {
       patientId,
       name,
       dosage,
@@ -43,6 +51,14 @@ export const createMedication = async (req, res) => {
         success: false,
         message: "Nama obat dan dosis wajib diisi.",
       });
+    }
+
+    if (!patientId) {
+      const defaultPatient =
+        memoryStore.patients.find(
+          (p) => p.name && p.name.toLowerCase().includes("jusmanidar")
+        ) || memoryStore.patients[0];
+      patientId = defaultPatient?.id || "827c114e-60af-41dd-a618-6aed07229be4";
     }
 
     const newMed = {
@@ -60,6 +76,17 @@ export const createMedication = async (req, res) => {
     };
 
     memoryStore.medications.push(newMed);
+
+    // Catat log manual ke riwayat perawatan
+    memoryStore.careNotes.unshift({
+      id: `note-${Date.now()}`,
+      patientId,
+      authorName: "Keluarga Pendamping",
+      category: "Jadwal Obat Manual",
+      content: `Obat "${newMed.name}" (${newMed.dosage}) ditambahkan manual ke jadwal pengobatan pasien.`,
+      createdAt: new Date().toISOString(),
+    });
+
     saveDb();
 
     return res.status(201).json({
@@ -87,7 +114,7 @@ export const logMedication = async (req, res) => {
       status = "GIVEN",
       scheduledTime,
       reason,
-      recordedByName = "Siti Rahma",
+      recordedByName = "Caregiver",
     } = req.body;
 
     const med = memoryStore.medications.find((m) => m.id === id);
@@ -132,8 +159,18 @@ export const logMedication = async (req, res) => {
  */
 export const getMedicationLogs = async (req, res) => {
   try {
-    const patientId = req.query.patientId || memoryStore.patients[0]?.id;
-    const logs = memoryStore.medicationLogs.filter((l) => l.patientId === patientId);
+    let patientId = req.query.patientId;
+    if (!patientId) {
+      const defaultPatient =
+        memoryStore.patients.find(
+          (p) => p.name && p.name.toLowerCase().includes("jusmanidar")
+        ) || memoryStore.patients[0];
+      patientId = defaultPatient?.id;
+    }
+
+    const logs = memoryStore.medicationLogs.filter(
+      (l) => !patientId || l.patientId === patientId
+    );
 
     return res.status(200).json({
       success: true,
@@ -178,4 +215,3 @@ export const deleteMedication = async (req, res) => {
     });
   }
 };
-

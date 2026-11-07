@@ -52,6 +52,13 @@ export const MedicationPage = ({ activePatient }) => {
   const patientId = activePatient?.id;
 
   const loadData = async () => {
+    if (!patientId) {
+      setMedications([]);
+      setLogs([]);
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     try {
       const [medRes, logRes] = await Promise.all([
@@ -144,9 +151,16 @@ export const MedicationPage = ({ activePatient }) => {
   };
 
   const parseTimes = (timesStr) => {
+    if (!timesStr) return ["Pagi"];
+    if (Array.isArray(timesStr)) return timesStr;
     try {
-      return JSON.parse(timesStr);
+      const parsed = JSON.parse(timesStr);
+      if (Array.isArray(parsed)) return parsed;
+      return [String(parsed)];
     } catch (e) {
+      if (typeof timesStr === "string") {
+        return timesStr.split(",").map((t) => t.trim()).filter(Boolean);
+      }
       return ["Pagi"];
     }
   };
